@@ -3,17 +3,17 @@ package mods.tesseract.worleycaves.config;
 
 public class Configs
 {
-    public static double noiseCutoffValue = -0.18;
+    public static float noiseCutoffValue = -0.18f;
 
-    public static double surfaceCutoffValue = -0.081;
+    public static float surfaceCutoffValue = -0.081f;
 
-    public static double warpAmplifier = 8.0;
+    public static float warpAmplifier = 8.0f;
 
     public static int easeInDepth = 15;
 
-    public static double verticalCompressionMultiplier = 2.0;
+    public static float verticalCompressionMultiplier = 2.0f;
 
-    public static double horizonalCompressionMultiplier = 1.0;
+    public static float horizonalCompressionMultiplier = 1.0f;
 
     public static int[] blackListedDims = {};
 
