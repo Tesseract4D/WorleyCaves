@@ -46,12 +46,12 @@ public class WorleyCaveGenerator extends MapGenCaves {
 
         maxCaveHeight = Configs.maxCaveHeight;
         minCaveHeight = Configs.minCaveHeight;
-        noiseCutoff = (float) Configs.noiseCutoffValue;
-        warpAmplifier = (float) Configs.warpAmplifier;
-        easeInDepth = (float) Configs.easeInDepth;
-        yCompression = (float) Configs.verticalCompressionMultiplier;
-        xzCompression = (float) Configs.horizonalCompressionMultiplier;
-        surfaceCutoff = (float) Configs.surfaceCutoffValue;
+        noiseCutoff =  Configs.noiseCutoffValue;
+        warpAmplifier =  Configs.warpAmplifier;
+        easeInDepth = Configs.easeInDepth;
+        yCompression =  Configs.verticalCompressionMultiplier;
+        xzCompression =  Configs.horizonalCompressionMultiplier;
+        surfaceCutoff = Configs.surfaceCutoffValue;
         lavaDepth = Configs.lavaDepth;
 
         lava = (Block) Block.blockRegistry.getObject(Configs.lavaBlock);
