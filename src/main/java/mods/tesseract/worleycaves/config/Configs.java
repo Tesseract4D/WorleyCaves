@@ -22,7 +22,7 @@ public class Configs
 
 		public int[] blackListedDims = {};
 
-		public int maxCaveHeight = 90;
+		public int maxCaveHeight = 128;
 
 		public int minCaveHeight = 1;
 

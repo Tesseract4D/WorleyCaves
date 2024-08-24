@@ -35,5 +35,4 @@
  */
 dependencies {
     runtimeOnlyNonPublishable("com.github.GTNewHorizons:NotEnoughItems:2.5.4-GTNH:dev")
-    implementation "maven.modrinth:mysteriumlibunofficial:1.5.8-1.7.10"
 }

@@ -1,7 +1,6 @@
 package mods.tesseract.worleycaves.world;
 
 
-import cpw.mods.fml.common.Loader;
 import mods.tesseract.worleycaves.Main;
 import mods.tesseract.worleycaves.config.Configs;
 import mods.tesseract.worleycaves.util.FastNoise;
@@ -39,7 +38,6 @@ public class WorleyCaveGenerator extends MapGenCaves {
     private static float xzCompression;
     private static float surfaceCutoff;
     private static int lavaDepth;
-    private static boolean additionalWaterChecks;
     private static int HAS_CAVES_FLAG = 129;
 
 
@@ -59,8 +57,6 @@ public class WorleyCaveGenerator extends MapGenCaves {
         xzCompression = (float) Configs.cavegen.horizonalCompressionMultiplier;
         surfaceCutoff = (float) Configs.cavegen.surfaceCutoffValue;
         lavaDepth = Configs.cavegen.lavaDepth;
-        additionalWaterChecks = Loader.isModLoaded("subterranaenwaters");
-
 
         lava = Blocks.lava;
         if (lava == null) {
@@ -78,11 +74,11 @@ public class WorleyCaveGenerator extends MapGenCaves {
     }
 
     private void debugValueAdjustments() {
-        //lavaDepth = 10;
-        //noiseCutoff = 0.18F;
-        //warpAmplifier = 8.0F;
-        //easeInDepth = 15;
-        //xzCompression = 0.5f;
+        lavaDepth = 10;
+        noiseCutoff = 0.18F;
+        warpAmplifier = 8.0F;
+        easeInDepth = 15;
+        xzCompression = 0.5f;
     }
 
     @Override
@@ -97,31 +93,23 @@ public class WorleyCaveGenerator extends MapGenCaves {
             }
         }
 
-        debugValueAdjustments();
-        boolean logTime = false; //TODO turn off
-        long start = 0;
-        if (logTime) {
-            start = System.nanoTime();
-        }
-
+        //debugValueAdjustments();
         this.generateWorleyCaves(worldIn, x, z, blocks);
+    }
 
-        if (logTime) {
-            genTime[currentTimeIndex] = System.nanoTime() - start;//System.currentTimeMillis() - start;
-            sum += genTime[currentTimeIndex];
-            currentTimeIndex++;
-            if (currentTimeIndex == genTime.length) {
-                System.out.printf("%d chunk average: %.2f ms per chunk\n", numLogChunks, sum / ((float) numLogChunks * 1000000));
-                sum = 0;
-                currentTimeIndex = 0;
-            }
+    public int getTopHeight(Block[] blocks) {
+        int y, i = getBlockIndex(7, Configs.cavegen.maxCaveHeight, 7);
+        for (; (y = (i & 0xff)) > 0; i--) {
+            Block b = blocks[i];
+            if (canReplaceBlock(b, Blocks.air))
+                break;
         }
+        return y;
     }
 
     protected void generateWorleyCaves(World worldIn, int chunkX, int chunkZ, Block[] blocks) {
-        int chunkMaxHeight = getMaxSurfaceHeight(blocks);
         int seaLevel = 63;
-        float[][][] samples = sampleNoise(chunkX, chunkZ, chunkMaxHeight + 1);
+        float[][][] samples = sampleNoise(chunkX, chunkZ, getTopHeight(blocks) - 4);
         float oneQuarter = 0.25F;
         float oneHalf = 0.5F;
         BiomeGenBase currentBiome;
@@ -226,7 +214,7 @@ public class WorleyCaveGenerator extends MapGenCaves {
                                         aboveBlock = Blocks.air;
                                     if (!isFluidBlock(aboveBlock) || localY <= lavaDepth) {
                                         //if we are in the easeInDepth range or near sea level or subH2O is installed, do some extra checks for water before digging
-                                        if ((depth < easeInDepth || localY > (seaLevel - 8) || additionalWaterChecks) && localY > lavaDepth) {
+                                        if ((depth < easeInDepth || localY > (seaLevel - 8)) && localY > lavaDepth) {
                                             if (localX < 15)
                                                 if (isFluidBlock(blocks[getBlockIndex(localX + 1, localY, localZ)]))
                                                     continue;
@@ -283,9 +271,9 @@ public class WorleyCaveGenerator extends MapGenCaves {
         float[][][] noiseSamples = new float[5][130][5];
         float noise;
         for (int x = 0; x < 5; x++) {
-            int realX = x * 4 + chunkX * 16;
+            int realX = x * 4 + (chunkX << 4);
             for (int z = 0; z < 5; z++) {
-                int realZ = z * 4 + chunkZ * 16;
+                int realZ = z * 4 + (chunkZ << 4);
 
                 int columnHasCaveFlag = 0;
 
@@ -404,7 +392,7 @@ public class WorleyCaveGenerator extends MapGenCaves {
     }
 
     protected boolean canReplaceBlock(Block block, Block blockUp) {
-        if (block == null)
+        if (block == null || blockUp.getMaterial() == Material.water)
             return false;
         return (Configs.cavegen.allowReplaceMoreBlocks && block.getMaterial() == Material.rock)
             || block == Blocks.stone
@@ -415,7 +403,7 @@ public class WorleyCaveGenerator extends MapGenCaves {
             || block == Blocks.sandstone
             || block == Blocks.mycelium
             || block == Blocks.snow_layer
-            || ((block == Blocks.sand || block == Blocks.gravel) && blockUp.getMaterial() != Material.water);
+            || block == Blocks.sand || block == Blocks.gravel;
     }
 
     /**
