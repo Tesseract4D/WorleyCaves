@@ -19,11 +19,7 @@ import net.minecraftforge.event.terraingen.TerrainGen;
 import net.minecraftforge.fluids.IFluidBlock;
 
 public class WorleyCaveGenerator extends MapGenCaves {
-    int numLogChunks = 500;
-    long[] genTime = new long[numLogChunks];
-    int currentTimeIndex = 0;
-    double sum = 0;
-
+    int[][] testCords = {{2, 6}, {3, 11}, {7, 2}, {9, 13}, {12, 4}, {13, 9}};
     private WorleyUtil worleyF1divF3 = new WorleyUtil();
     private FastNoise displacementNoisePerlin = new FastNoise();
     private MapGenBase replacementCaves;
@@ -48,19 +44,19 @@ public class WorleyCaveGenerator extends MapGenCaves {
         displacementNoisePerlin.SetNoiseType(FastNoise.NoiseType.Perlin);
         displacementNoisePerlin.SetFrequency(0.05f);
 
-        maxCaveHeight = Configs.cavegen.maxCaveHeight;
-        minCaveHeight = Configs.cavegen.minCaveHeight;
-        noiseCutoff = (float) Configs.cavegen.noiseCutoffValue;
-        warpAmplifier = (float) Configs.cavegen.warpAmplifier;
-        easeInDepth = (float) Configs.cavegen.easeInDepth;
-        yCompression = (float) Configs.cavegen.verticalCompressionMultiplier;
-        xzCompression = (float) Configs.cavegen.horizonalCompressionMultiplier;
-        surfaceCutoff = (float) Configs.cavegen.surfaceCutoffValue;
-        lavaDepth = Configs.cavegen.lavaDepth;
+        maxCaveHeight = Configs.maxCaveHeight;
+        minCaveHeight = Configs.minCaveHeight;
+        noiseCutoff = (float) Configs.noiseCutoffValue;
+        warpAmplifier = (float) Configs.warpAmplifier;
+        easeInDepth = (float) Configs.easeInDepth;
+        yCompression = (float) Configs.verticalCompressionMultiplier;
+        xzCompression = (float) Configs.horizonalCompressionMultiplier;
+        surfaceCutoff = (float) Configs.surfaceCutoffValue;
+        lavaDepth = Configs.lavaDepth;
 
-        lava = Blocks.lava;
+        lava = (Block) Block.blockRegistry.getObject(Configs.lavaBlock);
         if (lava == null) {
-            Main.LOGGER.error("Cannont find block " + Configs.cavegen.lavaBlock);
+            Main.LOGGER.error("Cannont find block " + Configs.lavaBlock);
             lava = Blocks.air;
         }
 
@@ -86,30 +82,19 @@ public class WorleyCaveGenerator extends MapGenCaves {
         int currentDim = worldIn.provider.dimensionId;
         this.worldObj = worldIn;
         //revert to vanilla cave generation for blacklisted dims
-        for (int blacklistedDim : Configs.cavegen.blackListedDims) {
+        for (int blacklistedDim : Configs.blackListedDims) {
             if (currentDim == blacklistedDim) {
                 this.replacementCaves.func_151539_a(provider, worldIn, x, z, blocks);
                 return;
             }
         }
 
-        //debugValueAdjustments();
         this.generateWorleyCaves(worldIn, x, z, blocks);
-    }
-
-    public int getTopHeight(Block[] blocks) {
-        int y, i = getBlockIndex(7, Configs.cavegen.maxCaveHeight, 7);
-        for (; (y = (i & 0xff)) > 0; i--) {
-            Block b = blocks[i];
-            if (canReplaceBlock(b, Blocks.air))
-                break;
-        }
-        return y;
     }
 
     protected void generateWorleyCaves(World worldIn, int chunkX, int chunkZ, Block[] blocks) {
         int seaLevel = 63;
-        float[][][] samples = sampleNoise(chunkX, chunkZ, getTopHeight(blocks) - 4);
+        float[][][] samples = sampleNoise(chunkX, chunkZ, getMaxSurfaceHeight(blocks) - 4);
         float oneQuarter = 0.25F;
         float oneHalf = 0.5F;
         BiomeGenBase currentBiome;
@@ -205,7 +190,7 @@ public class WorleyCaveGenerator extends MapGenCaves {
 
                                 //increase cutoff as we get closer to the minCaveHeight so it's not all flat floors
                                 if (localY < (minCaveHeight + 5)) {
-                                    adjustedNoiseCutoff += ((minCaveHeight + 5) - localY) * 0.05;
+                                    adjustedNoiseCutoff += (float) (((minCaveHeight + 5) - localY) * 0.05);
                                 }
 
                                 if (noiseVal > adjustedNoiseCutoff) {
@@ -332,40 +317,22 @@ public class WorleyCaveGenerator extends MapGenCaves {
     }
 
     private int getSurfaceHeight(Block[] blocks, int localX, int localZ) {
-        //Using a recursive binary search to find the surface
-        return recursiveBinarySurfaceSearch(blocks, localX, localZ, 255, 0);
-    }
-
-    //Recursive binary search, this search always converges on the surface in 8 in cycles for the range 255 >= y >= 0
-    private int recursiveBinarySurfaceSearch(Block[] blocks, int localX, int localZ, int searchTop, int searchBottom) {
-        int top = searchTop;
-        if (searchTop > searchBottom) {
-            int searchMid = (searchBottom + searchTop) / 2;
-            if (canReplaceBlock(blocks[getBlockIndex(localX, searchMid, localZ)], Blocks.air)) {
-                top = recursiveBinarySurfaceSearch(blocks, localX, localZ, searchTop, searchMid + 1);
-            } else {
-                top = recursiveBinarySurfaceSearch(blocks, localX, localZ, searchMid, searchBottom);
-            }
+        int i = getBlockIndex(localX, Configs.maxCaveHeight, localZ), y;
+        while ((y = (i & 0xff)) > 0) {
+            if (canReplaceBlock(blocks[getBlockIndex(localX, i, localZ)], Blocks.air))
+                break;
+            i--;
         }
-        return top;
+        return y;
     }
 
     //tests 6 points in hexagon pattern get max height of chunk
     private int getMaxSurfaceHeight(Block[] blocks) {
-        int max = 0;
-        int[][] testcords = {{2, 6}, {3, 11}, {7, 2}, {9, 13}, {12, 4}, {13, 9}};
-
-        for (int n = 0; n < testcords.length; n++) {
-
-            int testmax = getSurfaceHeight(blocks, testcords[n][0], testcords[n][1]);
-            if (testmax > max) {
-                max = testmax;
-                if (max > maxCaveHeight)
-                    return max;
-            }
-
+        int h = 0;
+        for (int[] testcord : testCords) {
+            h += getSurfaceHeight(blocks, testcord[0], testcord[1]);
         }
-        return max;
+        return h / 6;
     }
 
     //returns true if block matches the top or filler block of the location biome
@@ -394,7 +361,7 @@ public class WorleyCaveGenerator extends MapGenCaves {
     protected boolean canReplaceBlock(Block block, Block blockUp) {
         if (block == null || blockUp.getMaterial() == Material.water)
             return false;
-        return (Configs.cavegen.allowReplaceMoreBlocks && block.getMaterial() == Material.rock)
+        return (Configs.allowReplaceMoreBlocks && block.getMaterial() == Material.rock)
             || block == Blocks.stone
             || block == Blocks.dirt
             || block == Blocks.grass

@@ -3,33 +3,27 @@ package mods.tesseract.worleycaves.config;
 
 public class Configs
 {
-	public static ConfigCaveGen cavegen = new ConfigCaveGen();
+    public static double noiseCutoffValue = -0.18;
 
-	public static class ConfigCaveGen
-	{
+    public static double surfaceCutoffValue = -0.081;
 
-		public double noiseCutoffValue = -0.18;
+    public static double warpAmplifier = 8.0;
 
-		public double surfaceCutoffValue = -0.081;
+    public static int easeInDepth = 15;
 
-		public double warpAmplifier = 8.0;
+    public static double verticalCompressionMultiplier = 2.0;
 
-		public int easeInDepth = 15;
+    public static double horizonalCompressionMultiplier = 1.0;
 
-		public double verticalCompressionMultiplier = 2.0;
+    public static int[] blackListedDims = {};
 
-	    public double horizonalCompressionMultiplier = 1.0;
+    public static int maxCaveHeight = 128;
 
-		public int[] blackListedDims = {};
+    public static int minCaveHeight = 1;
 
-		public int maxCaveHeight = 128;
+    public static String lavaBlock = "minecraft:lava";
 
-		public int minCaveHeight = 1;
+    public static int lavaDepth = 10;
 
-		public String lavaBlock = "minecraft:lava";
-
-		public int lavaDepth = 10;
-
-		public boolean allowReplaceMoreBlocks = true;
-	}
+    public static boolean allowReplaceMoreBlocks = true;
 }
